@@ -1,17 +1,19 @@
 #ifndef _SEMAPHORE_HH
 #define _SEMAPHORE_HH
 
-// definition of the union semun
+#include <sys/sem.h>
+
+// The union semun must be defined by the programmer (see semctl)
 union semun {
     int val;
-    struct semid_ds * buf;
-    unsigned short * array;
+    struct semid_ds *buf;
+    unsigned short *array;
 };
 
-/* errsemOpExit is a support function to manipulate a semaphore's value
- * of a semaphore set. semid is a semaphore set identifier, sem_num is the
- * index of a semaphore in the set, sem_op is the operation performed on sem_num
- */
-void semOp (int semid, unsigned short sem_num, short sem_op);
+/* semOp performs the operation sem_op on the semaphore sem_num of the set
+ * semid: sem_op < 0 waits (P), sem_op > 0 signals (V), sem_op == 0 waits
+ * until the semaphore is zero. It terminates the process with errExit if
+ * semop fails. */
+void semOp(int semid, unsigned short sem_num, short sem_op);
 
 #endif

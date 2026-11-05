@@ -1,86 +1,84 @@
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
-#include <sys/wait.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/sem.h>
-
-#include "semaphore.h"
 #include "errExit.h"
+#include "report.h"
+#include "semaphore.h"
 
-char *messages[] = {"Operativi\n", "Sistemi ", " di ", "Corso"};
+#define STAGES 4
+const char *stageName[STAGES] = {"align", "sort", "call", "annotate"};
 
-int main (int argc, char *argv[]) {
-
-    // check command line input arguments
+int main(int argc, char *argv[]) {
+    // Check command line input arguments using 'argc'
     if (argc != 2) {
-        printf("Usage: %s <number>\n", argv[0]);
-        return 0;
-    }
-
-    // get how many times the programma has to write on standard out the
-    // string "Corso di Sistemi Operativi\n"
-    int n = atoi(argv[1]);
-    if (n < 0) {
-        printf("The input number must be > 0!\n");
+        printf("Usage: %s <samples>\n", argv[0]);
         return 1;
     }
 
-    // Create a semaphore set with 4 semaphores
-    int semid = // ...
-    if (semid == -1)
-        errExit("semget failed");
+    // Convert argv[1] to an integer using 'atoi': the samples of the run
+    int samples = 0;
+    if (samples <= 0) {
+        printf("The number of samples must be greater than 0!\n");
+        return 1;
+    }
 
-    // Initialize the semaphore set with semctl
-    unsigned short semInitVal[] = {0, 0, 0, 1};
+    // Create a semaphore set with STAGES semaphores using 'semget', the key
+    // IPC_PRIVATE and the permissions S_IRUSR | S_IWUSR
+    // (use 'errExit' if it fails)
+    int semid = -1;
+
+
+    // Initialize the set using 'semctl' and SETALL: the semaphore of the
+    // first stage starts at 1, the others at 0 (use 'errExit' if it fails)
+    unsigned short initial[STAGES] = {0 /*change this*/};
     union semun arg;
-    arg.array = semInitVal;
+    arg.array = initial;
 
-    if (/*...*/)
-        errExit("semctl SETALL failed");
 
-    // Generate 4 child processes:
-    // child-0 prints message[0], ... child-3 prints message[3]
-    for (int child = 0; child < 4; ++child) {
-        pid_t pid = fork();
-        // check error for fork
-        if (/*...*/)
-            printf("child %d not created!", child);
-        // check if running process is child or parent
-        else if (/*...*/) {
-            // code executed only by the child
-            for (int times = 0; times < n; times++) {
-                // Idea: Fourth child prints and then unlock the third child
-                //       Third child prints and then unlock the second child
-                //       ...
-                //       First child prints and then unlock the fourth child
+    printf("pipeline: %d sample(s) through %d stages\n", samples, STAGES);
+    fflush(stdout);   // the buffer would be duplicated by fork
 
-                // wait the i-th semaphore
-                // ...
+    // Create one child process per stage using 'fork'
+    for (int stage = 0; stage < STAGES; stage++) {
+        pid_t pid = -1;
 
-                // print the message on terminal
-                printf("%s", messages[child]);
-                // flush the standard out
+        if (1 /*change this*/) {
+            // fork failed: print a message using 'errExit'
+
+        } else if (1 /*change this*/) {
+            // Stage: for every sample, wait for its turn on the semaphore
+            // 'stage' (semOp with -1), print the line, then pass the sample
+            // on by signalling the semaphore of the next stage,
+            // (stage + 1) % STAGES (semOp with +1)
+            for (int k = 1; k <= samples; k++) {
+
+
+                printf("sample %d: %s\n", k, stageName[stage]);
                 fflush(stdout);
+                report_stage(stage, k);
 
-                // unlock the (i-1)-th semaphore.
-                // child is equal to 0, then the fourth child is unlocked
-                // ...
+
             }
-
             exit(0);
         }
+        // Parent: keep creating stages
     }
-    // code executed only by the parent process
 
-    // wait the termination of all child processes
-    // ...
+    // Parent: wait for the termination of every stage using 'wait'
 
-    // remove the created semaphore set
-    if (/*...*/)
-        errExit("semctl IPC_RMID failed");
+
+    // Run report (given): reveals code #1 when the stages ran in order
+    report_check(semid, samples);
+
+    // Remove the semaphore set using 'semctl' and IPC_RMID
+    // (use 'errExit' if it fails)
+
 
     return 0;
 }

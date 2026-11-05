@@ -1,0 +1,14 @@
+*.o
+.DS_Store
+compile_commands.json
+semaphore_ese1
+semaphore_ese2
+semaphore_ese3
+semaphore_ese4
+ese_5/pipeline
+ese_5/submit
+demo/*_demo
+results.vcf
+.report_*
+.vscode
+.cache

@@ -1,76 +1,103 @@
-#include <stdlib.h>
+#include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
-#include <sys/wait.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/sem.h>
-
-#include "semaphore.h"
 #include "errExit.h"
+#include "report.h"
+#include "semaphore.h"
 
-// function to print the semaphore set's state
-void printSemaphoresValue (int semid) {
-    unsigned short semVal[4];
-    union semun arg;
-    arg.array = semVal;
-
-    // get the current state of the set
-    if (semctl(semid, 0 /*ignored*/, GETALL, arg) == -1)
-        errExit("semctl GETALL failed");
-
-    // print the semaphore's value
-    printf("semaphore set state:\n");
-    for (int i = 0; i < 4; i++)
-        printf("id: %d --> %d\n", i, semVal[i]);
+// The record of one chromosome: four lines, one second apart (given).
+// The standard output is a file: without fflush, printf would keep the
+// lines in its buffer and write them all at once when the process exits
+void writeRecord(int chr) {
+    printf("# chr%d: calling started by PID %d\n", chr, getpid());
+    fflush(stdout);
+    sleep(1);
+    printf("chr%d %d A>G\n", chr, chr * 1000 + 17);
+    fflush(stdout);
+    sleep(1);
+    printf("chr%d %d C>T\n", chr, chr * 1000 + 42);
+    fflush(stdout);
+    sleep(1);
+    printf("# chr%d: calling complete\n", chr);
+    fflush(stdout);
 }
 
-int main (int argc, char *argv[]) {
-
-    char *messages[] = {"C", "B", "A"};
-
-    // Create a semaphore set with 4 semaphores
-    int semid = //...
-    if (semid == -1)
-        errExit("semget failed");
-
-    // Initialize the semaphore set with semctl
-    unsigned short semInitVal[] = {0, 0, 1, 3};
-    union semun arg;
-    arg.array = semInitVal;
-
-    if (/*...*/)
-        errExit("semctl SETALL failed");
-
-    printSemaphoresValue(semid);
-
-    // Generate 3 child processes:
-    // child-0 prints message[0], ... child-3 prints message[3]
-    for (int child = 0; child < 3; ++child) {
-        pid_t pid = fork();
-        // check error for fork
-        if (/*...*/)
-            printf("child %d not created!", child);
-        // check if running process is child or parent
-        else if (/*...*/) {
-            // code executed only by the child
-
-            // ... 
-
-            exit(0);
-        }
+int main(int argc, char *argv[]) {
+    // Check command line input arguments using 'argc'
+    if (argc != 2) {
+        printf("Usage: %s <workers>\n", argv[0]);
+        return 1;
     }
-    // code executed only by the parent process
 
-    // wait the termination of all child processes
-    //...
+    // Convert argv[1] to an integer using 'atoi': the number of workers,
+    // one per chromosome
+    int workers = 0;
+    if (workers <= 0 || workers > 8) {
+        printf("The number of workers must be between 1 and 8!\n");
+        return 1;
+    }
 
-    printSemaphoresValue(semid);
+    // Create a semaphore set with one semaphore using 'semget', the key
+    // IPC_PRIVATE and the permissions S_IRUSR | S_IWUSR
+    // (use 'errExit' if it fails)
+    int semid = -1;
 
-    // remove the created semaphore set
-    if (/*...*/)
-        errExit("semctl IPC_RMID failed");
+
+    // Initialize the semaphore to 1 using 'semctl' and SETVAL: one worker
+    // at a time in the file (use 'errExit' if it fails)
+    union semun arg;
+    arg.val = 0 /*change this*/;
+
+
+    // Redirect the standard output to the file results.vcf: close
+    // STDOUT_FILENO, then open results.vcf with the flags
+    // O_WRONLY | O_CREAT | O_TRUNC and the mode S_IRUSR | S_IWUSR. The lowest
+    // free descriptor is 1: from now on printf writes to the file
+    // (use 'errExit' if a call fails)
+
+
+
+    // Messages for the operator go to the standard error, which is still
+    // the terminal
+    fprintf(stderr, "variant calling: %d worker(s) writing results.vcf\n", workers);
+
+    // Create one worker per chromosome using 'fork'
+    for (int chr = 1; chr <= workers; chr++) {
+        pid_t pid = -1;
+
+        if (1 /*change this*/) {
+            // fork failed: print a message using 'errExit'
+
+        } else if (1 /*change this*/) {
+            // Worker: take the semaphore (semOp with -1), write the record
+            // of the chromosome with writeRecord, release the semaphore
+            // (semOp with +1), terminate with 'exit'
+
+            writeRecord(chr);
+
+
+        }
+        // Parent: keep creating workers
+    }
+
+    // Parent: wait for the termination of every worker using 'wait'
+
+
+    fprintf(stderr, "run complete: results.vcf written\n");
+
+    // Run report (given): reveals code #2 when every record is intact
+    report_check(semid, workers);
+
+    // Remove the semaphore set using 'semctl' and IPC_RMID
+    // (use 'errExit' if it fails)
+
 
     return 0;
 }
