@@ -3,8 +3,8 @@
 CFLAGS=-Wall -std=gnu99
 INCLUDES=-I./inc
 
-PROGS=mutex_demo pingpong_demo barrier_demo leftover_demo
-SRCS=src/errExit.c src/semaphore.c src/mutex.c src/pingpong.c src/barrier.c src/leftover.c
+PROGS=mutex_demo pingpong_demo barrier_demo gate_demo
+SRCS=src/errExit.c src/semaphore.c src/mutex.c src/pingpong.c src/barrier.c src/gate.c
 OBJS=$(SRCS:.c=.o)
 
 all: $(PROGS)
