@@ -12,19 +12,16 @@
 #include "report.h"
 #include "semaphore.h"
 
-// The record of one chromosome: four lines, one second apart (given).
+// The record of one chromosome: four lines (given).
 // The standard output is a file: without fflush, printf would keep the
 // lines in its buffer and write them all at once when the process exits
 void writeRecord(int chr) {
     printf("# chr%d: calling started by PID %d\n", chr, getpid());
     fflush(stdout);
-    sleep(1);
     printf("chr%d %d A>G\n", chr, chr * 1000 + 17);
     fflush(stdout);
-    sleep(1);
     printf("chr%d %d C>T\n", chr, chr * 1000 + 42);
     fflush(stdout);
-    sleep(1);
     printf("# chr%d: calling complete\n", chr);
     fflush(stdout);
 }
