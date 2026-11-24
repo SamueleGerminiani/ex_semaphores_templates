@@ -38,7 +38,6 @@ int main(int argc, char *argv[]) {
             semOp(semid, 0, -1);
             printf("ping %d (parent %d)\n", round, getpid());
             fflush(stdout);
-            sleep(1);
             semOp(semid, 1, 1);
         }
     }
