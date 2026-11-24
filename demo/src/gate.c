@@ -18,9 +18,10 @@
 #define CARS 3
 
 int main(int argc, char *argv[]) {
-    // The same pathname and project id give the same key in every program:
-    // both roles must be started from this directory
-    key_t key = ftok(".", 'g');
+    // The same existing file and the same project id give the same key in
+    // every program: the Makefile of this directory and the number 1.
+    // Start both roles from this directory, or ftok does not find the file
+    key_t key = ftok("Makefile", 1);
     if (key == -1)
         errExit("ftok");
 
